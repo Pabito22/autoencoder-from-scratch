@@ -258,6 +258,16 @@ class NN:
        
         print("sigma_arr")
         print(sigma_arr)
+        #grad_wl = delta_l*a_l-1.T
+        print("a_l")
+        print(self._a)
+
+        for l_ix in range(len(sigma_arr)):
+            grad = np.outer(sigma_arr[l_ix], self._a[l_ix])
+            gradients_w.append(grad)
+        
+        print("Gradients")
+        print(gradients_w)
 
 
 
