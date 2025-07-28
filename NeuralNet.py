@@ -8,7 +8,7 @@ def leaky_relu(arr, derivative=False):
 
 class Perceptron:
     """
-    A class that is supposed to simulate a single node in NN.
+    Perceptron implementation.
     """
 
     def __init__(self, inpt_shape: int, activation_fun=leaky_relu):
@@ -18,6 +18,7 @@ class Perceptron:
         - Sets the activation function.
 
         inpt_shape: int, the number of input features (excluding bias)
+                in other words, nr of lines entering the Perceptron.
         activation_fun: callable, the activation function (e.g., ReLU or sigmoid)
         """
         #initialise the weights randomly [weight + bias]
@@ -105,129 +106,144 @@ class Layer:
         
 
 class NN:
-    """This class represents the whole Neural Network."""
+    """A simple feedforward neural network implementation."""
 
-    def __init__(self, nn_input_size):
+    def __init__(self, input_size: int):
         """
-        Initializes the NN
+        Initialize the neural network.
 
-        activation: contains activations of every layer, including the input
 
-        nn_input_size: defines the input size fot the first layer
-        For the first layer you create 'input-layer -' !! Not only input! 
-        """
-        self.nn_input_size = nn_input_size
-        #list for storing the layers
-        self.nn_layer_list = []
-        #for storing the activations + input (gradient calculation)
-        self._a = []
-    
-    def add_layer(self, num_neurons, activation_funct = leaky_relu):
-        """
-        Adds a new layer to the NN.
         Parameters:
-        num_neurons: number of neurons in the new layer (i.e., layer output size)
-        activation_funct: activation function for all neurons in the layer
-        """
-        #if list with layers not empty -> take the last outpts!
-        if self.nn_layer_list:
-            nr_of_layers = len(self.nn_layer_list)
-            #save the output size of the last layer and put as input to the new layer
-            next_layer_input_size = self.nn_layer_list[nr_of_layers-1].num_neurons
-            self.nn_layer_list.append(Layer(input_shape=next_layer_input_size,
-                                            num_neurons=num_neurons,activation_function=activation_funct))
-        else:
-            #First layer
-            first_layer_input_size = self.nn_input_size
-            self.nn_layer_list.append(Layer(input_shape=first_layer_input_size,
-                                            num_neurons=num_neurons,activation_function=activation_funct))
-
-    def predict(self, nn_input):
-        """
-        Gives the output from the NN.
-        Params:
-        nn_input: the input(e.g. image) fed into the nn
-
-        Resets neuron_nets and _a!!!
-        """
-        self.neuron_nets = [] 
-        self._a = [] 
+        input_size (int): Defines the size for the input layer (NN's input). 
         
-        nr_of_layers = len(self.nn_layer_list)
+        input_size:int,  defines the input size fot the first layer
+        IMPORTANT
+        First layer of the NN contains the input and the neurons.
+        Usually first layer is just the input without neurons.
+        """
+        self.input_size = input_size
+        #list for storing the layers
+        self.layers = []
+        #stores the activations of every node in every layer of NN
+        self.activations = []
+    
+    def add_layer(self, num_neurons: int, activation_function = leaky_relu):
+        """
+        Add a fully connected layer to the network.
 
-        self._a.append(nn_input)
+        Adds a layer consitting of num_nurons neurons.
+        The input of every neuron in the layer is either
+        the input_size for entire NN, and if this is a hidden layer
+        then each neurons's input_size is the number of neurons of the last layer.
+        Input size defines the number of weights that each neuron has.
+
+        Parameters:
+        num_neurons (int): Number of neurons in the layer.
+        activation_func (function): Activation function for the layer.
+        """
+        #if first layer then set the NN's input otherwise last layers output as the input to every node in the 
+        input_dim = self.layers[-1].num_neurons if self.layers else self.input_size
+        self.layers.append(Layer(input_shape=input_dim, num_neurons=num_neurons, activation_function=activation_function))
+
+    def _predict(self, nn_input:np.ndarray):
+        """
+        Perform a forward pass and return the network output.
+        Params:
+        nn_input (np.ndarray): Input to the network (eg. image).
+
+        Resets neuron_nets and activations!!!
+
+        Returns:
+        np.ndarray: Network output.
+
+        """
+        #save the input for later use
+        self.nn_input = nn_input
+
+        self.neuron_nets = [] 
+        self.activations = [] 
+        
+        nr_of_layers = len(self.layers)
+
+        self.activations.append(nn_input)
         #calculate the result for the first layer and save it
-        self._a.append(self.nn_layer_list[0].predict(nn_input))
+        self.activations.append(self.layers[0].predict(nn_input))
         #update the rest of nn'a layesrs
         for i in range(1,nr_of_layers):
             #get the output from last layer (input to the next one)
-            output_from_last = self._a[i]
+            output_from_last = self.activations[i]
             #predict on next layer
-            self._a.append(self.nn_layer_list[i].predict(output_from_last))
+            self.activations.append(self.layers[i].predict(output_from_last))
 
-        return self.nn_layer_list[-1].layer_output
+        return self.layers[-1].layer_output
 
-    def error(self, expected_output):
+    def error(self, y_true: np.ndarray):
         """
-        Returns the Loss of NN prediction:
+        Returns the L2 Loss of NN prediction:
 
-        expected_output : what the NN should return (the same shape as the last layer of NN!.
-        """
-        return 0.5*np.sum((self.nn_layer_list[-1].layer_output - expected_output)**2)
-
-    def _get_sigma_values(self, exp_output):
-        """
-        This function calculates the sigma value for every node in evry
-        layer of the NN, and returns an array.
         Parameters:
-        exp_output : Expected result of neural network.
+        y_true (np.ndarray): Expected output.
+
         Returns:
-        sigma_arr: Array containing sigma vals for every node in evry layer
-        np.array([1 sigma val, 2 sigma val, ...., L sigma val])
+        float: Loss value.
         """
-        sigma_arr = []
+        return 0.5*np.sum((self.layers[-1].layer_output - y_true)**2)
+
+    def _get_delta_values(self, y_true: np.ndarray):
+        """
+        Compute delta (error term) for each layer using backpropagation.
+        With the use of the equation: 
+        δl−1:=(fl−1)′∘(Wl)T⋅δl
+        Parameters:
+        y_true (np.ndarray) : Expected result of neural network.
+
+        Returns:
+        list[np.ndarray]: List containing delta
+         valuess for every node in evry layer, going 
+         from the begining to the end of layers list in NN.
+        [1st layer delta, 2nd delta, ...., Lth delta])
+        """
+        delta_arr = []
         
-        # find the first's layer sigma value
-        last_layer = self.nn_layer_list[-1]
+        # find the last layer's delta value
+        last_layer = self.layers[-1]
         last_layer_output = last_layer.layer_output
         last_nets = last_layer.neuron_nets
-        sigma_1 = -(exp_output - last_layer_output)*last_layer.activation_function(
+        delta_1 = -(y_true - last_layer_output)*last_layer.activation_function(
             last_nets,derivative=True)
-        print("first Sigma:")
-        print(sigma_1)
-        sigma_arr.append(sigma_1)
 
-        nr_of_layers = len(self.nn_layer_list)
+        delta_arr.append(delta_1)
+        nr_of_layers = len(self.layers)
 
-        sig_i = 0 #for indexing sigma_arr
+        del_i = 0 #for indexing delta_arr
         #get the sigma values for the rest of layers
         for i in range(nr_of_layers - 2, -1, -1):
-            print("-------------")
-            print("i (layer from last to first)", i)
-            current_layer = self.nn_layer_list[i]
+            current_layer = self.layers[i]
             f = current_layer.activation_function #get the act fun from this layer
             #layer right to current layer 
-            layer_right = self.nn_layer_list[i+1]
+            layer_right = self.layers[i+1]
             W = layer_right.get_weights(only_weights=True)
-            print("W:\n",W)
+
             #get the sigma from the right layer
-            sig_old = sigma_arr[sig_i]
-            print("sig old: \n", sig_old)
+            del_old = delta_arr[del_i]
             #derivative
             f_prim = f(current_layer._get_net_values(), derivative=True)
             #calculate the sigma for current layer
-            sigma = f_prim * (W.T @ sig_old)
-            sigma_arr.append(sigma)
-            sig_i+=1
+            delta = f_prim * (W.T @ del_old)
+            delta_arr.append(delta)
+            del_i+=1
         
-        #make the sigma in the right order
-        sigma_arr = sigma_arr[::-1]
-        return sigma_arr
+        #make the delta_arr in the right order
+        delta_arr = delta_arr[::-1]
+        return delta_arr
         
     def backward(self, y_true: np.ndarray, lr: float = 0.1) -> float:
         """
         Perform backprop on the last forward pass and update weights.
         Returns the new loss.
+
+        Remember to call predict after calling this method,
+        so for new Error weights will be updated.
 
         Parameters:
         y_true: the true values that NN should output.
@@ -236,30 +252,25 @@ class NN:
         Returns: The L2 loss after updating the layers
         """
         
-        if len(self.nn_layer_list) < 2:
+        if len(self.layers) < 2:
             raise ValueError("Cannot do backpropagation with only one layer.")
 
-        #get the sigma values for every layer
-        last_layer = self.nn_layer_list[-1]
-        sigma_arr = self._get_sigma_values(y_true)
-        sigma = sigma_arr[-1]
-        #the outputs from the layer previous to the last one
-        prev_layer_output = self.nn_layer_list[-2].layer_output
-
-        
+        delta_arr = self._get_delta_values(y_true)
+       
         #go trough every node
-        for l_ix in range(len(sigma_arr)):
+        for l_ix in range(len(delta_arr)):
             #gradient for weights and biases
-            grad_w = np.outer(sigma_arr[l_ix], self._a[l_ix])
-            grad_b = sigma_arr[l_ix]
-            #total gradient
+            grad_w = np.outer(delta_arr[l_ix], self.activations[l_ix]) # ∂E/∂W
+            grad_b = delta_arr[l_ix]                          # ∂E/∂b
             gradient = np.column_stack((grad_w, grad_b))
-
-            #Now u can update every layer's weights!
-            layer = self.nn_layer_list[l_ix]
+            
+            #Update weights
+            layer = self.layers[l_ix]
             old_weights = layer.get_weights()
             new_weights = old_weights - lr*gradient
             layer._update_weights(new_weights)
+
+        self._predict(self.nn_input)
 
         return self.error(y_true)
 
