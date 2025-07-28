@@ -273,6 +273,42 @@ class NN:
         self._predict(self.nn_input)
 
         return self.error(y_true)
+    
+    def train_sgd(model, X_train, y_train, epochs=10, lr=0.1, shuffle=True):
+        """
+        Trains the neural network using Stochastic Gradient Descent (SGD).
+
+        Parameters:
+        model : NN
+            Instance of the NN class.
+        X_train : np.ndarray
+            Training inputs (num_samples x input_dim).
+        y_train : np.ndarray
+            Training targets (num_samples x output_dim).
+        epochs : int
+            Number of times to iterate over the entire training data.
+        lr : float
+            Learning rate.
+        shuffle : bool
+            Whether to shuffle data each epoch.
+        """
+        num_samples = X_train.shape[0]
+        
+        for epoch in range(epochs):
+            if shuffle:
+                indices = np.random.permutation(num_samples)
+                X_train = X_train[indices]
+                y_train = y_train[indices]
+
+            epoch_loss = 0
+            for x, y in zip(X_train, y_train):
+                output = model.predict(x)
+                loss = model.backward(y, lr)
+                epoch_loss += loss
+
+            avg_loss = epoch_loss / num_samples
+            print(f"Epoch {epoch+1}/{epochs} - Loss: {avg_loss:.4f}")
+
 
 
     
