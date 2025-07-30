@@ -5,6 +5,37 @@ def leaky_relu(arr, derivative=False):
         return np.where(arr > 0, 1, 0.01)
     return np.where(arr > 0, arr, arr * 0.01)
 
+import numpy as np
+
+def sigmoid(x, derivative=False):
+    """
+    Sigmoid activation function.
+
+    Parameters:
+    x : np.ndarray or float
+        Input value(s)
+    derivative : bool
+        If True, returns the derivative of the sigmoid function
+
+    Returns:
+    np.ndarray or float
+    """
+    # Clip to avoid overflow in exp
+    x = np.clip(x, -500, 500)
+    s = 1 / (1 + np.exp(-x))
+    if derivative:
+        return s * (1 - s)
+    return s
+
+
+def tanh(x, derivative=False):
+    if derivative:
+        t = np.tanh(x)
+        return 1 - t**2
+    return np.tanh(x)
+
+
+
 
 class Perceptron:
     """
@@ -277,6 +308,7 @@ class NN:
     def train_sgd(model, X_train, y_train, epochs=10, lr=0.1, shuffle=True):
         """
         Trains the neural network using Stochastic Gradient Descent (SGD).
+        
 
         Parameters:
         model : NN
