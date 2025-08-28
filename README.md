@@ -24,15 +24,18 @@ Reduces 64-dimensional input (8×8 image) to a compressed 32-dimensional represe
 Reconstructs the original input from the 32-dimensional bottleneck.
 
 ### Architecture
-Input: 64
-Encoder: 50 → 40 → 36 
-Decoder: 40 → 50 → 64
-Output: 64
 
+<img src="./Autoencoder Architecture.png" alt="Autoencoder Architecture" width="500"/>    
+
+Input: 64       
+Encoder: 50 → 40 → 36        
+Decoder: 40 → 50 → 64      
+Output: 64    
 
 - Activation function: `tanh` for hidden layers, `sigmoid` at output layer.
 - Loss function: Mean Squared Error (L2 loss).
 - Optimizer: Manual implementation of Stochastic Gradient Descent.
+
 
 ---
 
