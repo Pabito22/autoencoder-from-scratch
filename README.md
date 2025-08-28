@@ -7,8 +7,8 @@ This project implements an **autoencoder neural network** from scratch using **N
 ## 📁 Project Structure
 
 - `NeuralNet.py` — Core neural network implementation: supports forward propagation, backpropagation, and training.
-- `Training of Autoencoder.ipynb` — Jupyter notebook for training the autoencoder.
-- `Autoencoder in Action.ipynb` — Notebook for visualizing input digits, their compressed representations, and reconstructions.
+- `Training of Autoencoder.ipynb` — Jupyter notebook for setting up the NN's architecture and training the autoencoder.
+- `Autoencoder in Action.ipynb` — Notebook for visualizing input digits, their compressed representations, and learned reconstructions.
 - `layer_weights.npy` — (Optional) NumPy file containing trained layer weights for re-use or visualization.
 
 ---
@@ -18,7 +18,7 @@ This project implements an **autoencoder neural network** from scratch using **N
 The model is trained to minimize reconstruction loss between the input and the output image. The network consists of two main parts:
 
 ### Encoder
-Reduces 64-dimensional input (8×8 image) to a compressed 32-dimensional representation (bottleneck).
+Reduces 64-dimensional input (8×8 image) to a compressed 36-dimensional representation (bottleneck).
 
 ### Decoder
 Reconstructs the original input from the 32-dimensional bottleneck.
@@ -44,7 +44,7 @@ Output: 64
 Uses the `load_digits()` dataset from `sklearn.datasets`:
 
 - 8×8 grayscale digit images (flattened to 64 features).
-- Total samples: 1797
+- Total samples: 1797x4 (x4 due to data augmentation)
 - No labels are used (unsupervised learning).
 
 ---
